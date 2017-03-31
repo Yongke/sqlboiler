@@ -279,8 +279,7 @@ ColLoop:
 				continue ColLoop
 			}
 		}
-
-		return nil, errors.Errorf("could not find struct field name in mapping: %s", name)
+		ptrs[i] = sentinel << 1 //just a special value :-(
 	}
 
 	return ptrs, nil
@@ -291,6 +290,11 @@ ColLoop:
 func PtrsFromMapping(val reflect.Value, mapping []uint64) []interface{} {
 	ptrs := make([]interface{}, len(mapping))
 	for i, m := range mapping {
+		if m == sentinel << 1 {
+			var placeholder interface{}
+			ptrs[i] = &placeholder
+			continue
+		}
 		ptrs[i] = ptrFromMapping(val, m, true).Interface()
 	}
 	return ptrs
@@ -362,7 +366,6 @@ func makeStructMappingHelper(typ reflect.Type, prefix string, current uint64, de
 			makeStructMappingHelper(f.Type, tag, current|uint64(i)<<depth, depth+8, fieldMaps)
 			continue
 		}
-
 		fieldMaps[tag] = current | (sentinel << (depth + 8)) | (uint64(i) << depth)
 	}
 }
